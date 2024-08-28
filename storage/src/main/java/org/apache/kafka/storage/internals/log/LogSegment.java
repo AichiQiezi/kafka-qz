@@ -107,7 +107,7 @@ public class LogSegment implements Closeable {
      * @param txnIndex The transaction index
      * @param baseOffset A lower bound on the offsets in this segment
      * @param indexIntervalBytes The approximate number of bytes between entries in the index
-     * @param rollJitterMs The maximum random jitter subtracted from the scheduled segment roll time
+     * @param rollJitterMs The maximum random jitter subtracted from the scheduled segment roll time 这个参数的思想可以借鉴，防止“耗资源”的操作集中执行
      * @param time The time instance
      */
     public LogSegment(FileRecords log,
@@ -233,7 +233,7 @@ public class LogSegment implements Closeable {
      *
      * @param largestOffset The last offset in the message set
      * @param largestTimestampMs The largest timestamp in the message set.
-     * @param shallowOffsetOfMaxTimestamp The last offset of earliest batch with max timestamp in the messages to append.
+     * @param shallowOffsetOfMaxTimestamp The last offset of earliest batch with max timestamp in the messages to append. 最大时间戳对应的消息位移
      * @param records The log entries to append.
      * @throws LogSegmentOffsetOverflowException if the largest offset causes index offset overflow
      */
@@ -248,6 +248,7 @@ public class LogSegment implements Closeable {
             if (physicalPosition == 0)
                 rollingBasedTimestamp = OptionalLong.of(largestTimestampMs);
 
+            // 最新位移值不能小于 baseOffset，也不能大于限制
             ensureOffsetInRange(largestOffset);
 
             // append the messages
@@ -257,7 +258,7 @@ public class LogSegment implements Closeable {
             if (largestTimestampMs > maxTimestampSoFar()) {
                 maxTimestampAndOffsetSoFar = new TimestampOffset(largestTimestampMs, shallowOffsetOfMaxTimestamp);
             }
-            // append an entry to the index (if needed)
+            // append an entry to the index (if needed) indexIntervalBytes 可以配置，默认 4KB
             if (bytesSinceLastIndexEntry > indexIntervalBytes) {
                 offsetIndex().append(largestOffset, physicalPosition);
                 timeIndex().maybeAppend(maxTimestampSoFar(), shallowOffsetOfMaxTimestampSoFar());
@@ -412,7 +413,7 @@ public class LogSegment implements Closeable {
      * Read a message set from this segment beginning with the first offset >= startOffset. The message set will include
      * no more than maxSize bytes and will end before maxOffset if a maxOffset is specified.
      *
-     * This method is thread-safe.
+     * This method is thread-safe. kafka 是追加写，对于要去读的部分，是不会再去修改的，所以是天然并发安全的
      *
      * @param startOffset A lower bound on the first offset to include in the message set we read
      * @param maxSize The maximum number of bytes to include in the message set we read

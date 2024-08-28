@@ -149,6 +149,7 @@ public class OffsetIndex extends AbstractIndex {
 
             if (entries() == 0 || offset > lastOffset) {
                 log.trace("Adding index entry {} => {} to {}", offset, position, file().getAbsolutePath());
+                // 这部分用到了直接内存，可以减少内存拷贝的次数（减少 CPU 上下文切换的次数）
                 mmap().putInt(relativeOffset(offset));
                 mmap().putInt(position);
                 incrementEntries();

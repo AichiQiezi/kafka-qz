@@ -2038,6 +2038,7 @@ object UnifiedLog extends Logging {
     val producerStateManager = new ProducerStateManager(topicPartition, dir,
       maxTransactionTimeoutMs, producerStateManagerConfig, time)
     val isRemoteLogEnabled = UnifiedLog.isRemoteLogEnabled(remoteStorageSystemEnable, config, topicPartition.topic)
+    // 清除无效文件数据
     val offsets = new LogLoader(
       dir,
       topicPartition,
